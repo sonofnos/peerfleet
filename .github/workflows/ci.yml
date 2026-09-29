@@ -5,6 +5,13 @@ on:
   push:
     branches: [main]
 
+env:
+  # prisma.config.ts requires DATABASE_URL to be *set* just to run
+  # `prisma generate` (no connection is actually made) -- this is a
+  # placeholder, not a real target. Real DB access happens against
+  # Testcontainers-provisioned Postgres in the integration job.
+  DATABASE_URL: postgresql://placeholder:placeholder@localhost:5432/placeholder
+
 jobs:
   lint-and-typecheck:
     runs-on: ubuntu-latest
