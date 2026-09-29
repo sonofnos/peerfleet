@@ -1,0 +1,81 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Vehicle {
+  id             String    @id @default(uuid())
+  hostId         String
+  make           String
+  model          String
+  dailyRateMinor Int
+  currency       String    @default("NGN")
+  createdAt      DateTime  @default(now())
+  bookings       Booking[]
+
+  @@map("vehicles")
+}
+
+enum BookingStatus {
+  REQUESTED
+  CONFIRMED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+model Booking {
+  id                 String        @id @default(uuid())
+  vehicleId          String
+  vehicle            Vehicle       @relation(fields: [vehicleId], references: [id])
+  hostId             String
+  renterId           String
+  periodStart        DateTime
+  periodEnd          DateTime
+  totalPriceMinor    Int
+  currency           String        @default("NGN")
+  status             BookingStatus @default(REQUESTED)
+  cancellationReason String?
+  version            Int           @default(0)
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  @@index([vehicleId, periodStart, periodEnd])
+  @@map("bookings")
+}
+
+model OutboxMessage {
+  id          String    @id @default(uuid())
+  aggregateId String
+  eventType   String
+  payload     Json
+  createdAt   DateTime  @default(now())
+  publishedAt DateTime?
+
+  @@index([publishedAt])
+  @@map("outbox_messages")
+}
+
+model PayoutInitiation {
+  id          String   @id @default(uuid())
+  bookingId   String
+  hostId      String
+  amountMinor Int
+  currency    String
+  createdAt   DateTime @default(now())
+
+  @@map("payout_initiations")
+}
+
+model ProcessedInboxMessage {
+  messageId   String
+  consumer    String
+  processedAt DateTime @default(now())
+
+  @@id([messageId, consumer])
+  @@map("processed_inbox_messages")
+}
